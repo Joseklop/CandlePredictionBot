@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  candlepredictionbot:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: poetry run python main.py
