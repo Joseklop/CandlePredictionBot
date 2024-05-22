@@ -7,4 +7,4 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-    command: poetry run python main.py
+    command: poetry run python tg_bot.py
