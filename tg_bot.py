@@ -36,8 +36,8 @@ async def send_current_info(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if candle_data is not None:
         start_timestamp = candle_data['start']
         end_timestamp = candle_data['end']
-        start_str = datetime.utcfromtimestamp(start_timestamp / 1000).strftime('%Y-%м-%d %H:%M:%S')
-        end_str = datetime.utcfromtimestamp(end_timestamp / 1000).strftime('%Y-%м-%д %H:%М:%S')
+        start_str = datetime.utcfromtimestamp(start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        end_str = datetime.utcfromtimestamp(end_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S')
         await update.message.reply_text(f"""
         Interval: {candle_data['interval']} min
         Start: {start_str}, End: {end_str}
@@ -61,17 +61,14 @@ async def send_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 async def send_recommendation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message:
         args = context.args
-        if len(args) < 3:
-            await update.message.reply_text('Использование: /recommend [Symbol(по умолчанию BTCUSDT)] [Interval(по умолчанию 5)] [Screener(по умолчанию crypto)] [Exchange (по умолчанию Bybit)]')
-            return
 
-    symbol = args[0]
-    interval = args[1]
-    screener = args[2]
-    exchange = args[3] if len(args) > 3 else 'Bybit'
+        symbol = args[0] if len(args) > 0 else 'BTCUSDT'
+        interval = args[1] if len(args) > 1 else '5'
+        screener = args[2] if len(args) > 2 else 'crypto'
+        exchange = args[3] if len(args) > 3 else 'Bybit'
 
     try:
-        analysis = get_technical_analysis(symbol, interval, exchange)
+        analysis = get_technical_analysis(symbol, interval, screener, exchange)
         summary = analysis.summary
 
         await update.message.reply_text(f"""

@@ -8,7 +8,7 @@ config = Config()
 def run_telegram_bot():
     try:
         # Запуск tg_bot.py как отдельного процесса
-        subprocess.run(["python", config.tg_bot_path], check=True)
+        subprocess.run(["python3", config.tg_bot_path], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Ошибка при выполнении tg_bot.py: {e}")
     except Exception as e:
@@ -17,7 +17,7 @@ def run_telegram_bot():
 def run_websocket():
     try:
         # Запуск websocketBybit.py как отдельного процесса
-        subprocess.run(["python", config.websocket_path], check=True)
+        subprocess.run(["python3", config.websocket_path], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Ошибка при выполнении websocketBybit.py: {e}")
     except Exception as e:
