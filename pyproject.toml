@@ -14,7 +14,6 @@ keras = "2.14.0"
 python-telegram-bot = "21.1.1"
 requests = "2.31.0"
 websocket-client = "1.7.0"
-keyboard = "0.13.5"
 tensorflow-io-gcs-filesystem = "0.31.0"
 tradingview_ta = "3.3.0"
 

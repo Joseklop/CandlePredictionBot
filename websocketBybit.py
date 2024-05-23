@@ -3,7 +3,6 @@ import json
 import websocket
 import threading
 import _thread
-import keyboard
 from datetime import datetime
 from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
@@ -110,18 +109,8 @@ def get_last_candle_data():
 def get_prediction_statistics():
     return successful_predictions, unsuccessful_predictions
 
-def exit_on_keypress():
-    print("Press 'q' to exit.")
-    while True:
-        if keyboard.is_pressed('q'):
-            print("Exiting program...")
-            os._exit(0)
-
 symbol = config.get('symbol', 'BTCUSDT')
 interval = config.get('interval', '5')
 subscription_string = f"kline.{interval}.{symbol}"
 socket_thread = threading.Thread(target=SocketConn, args=('wss://stream.bybit.com/v5/public/linear', [subscription_string]))
 socket_thread.start()
-
-exit_thread = threading.Thread(target=exit_on_keypress)
-exit_thread.start()
