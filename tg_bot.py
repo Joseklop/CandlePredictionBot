@@ -23,9 +23,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # Функция для команды /predict
 async def send_prediction(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     predicted_price = websocketBybit.get_last_predicted_price()
-    if predicted_price is not None:
+    last_closing_prices = websocketBybit.last_closing_prices
+    if predicted_price is not None and last_closing_prices:
+        current_price = last_closing_prices[-1]
+        difference = predicted_price - current_price
+        difference_percentage = (difference / current_price) * 100
+        prediction = "вырастет 📈" if difference > 0 else "упадет 📉"
+        
         await update.message.reply_text(f"""
         Прогнозируемая следующая цена закрытия: {predicted_price}
+        Текущая цена: {current_price}
+        Разница: {difference}
+        Разница в процентах: {difference_percentage:.2f}%
+        Прогноз: Цена {prediction}
         """)
     else:
         await update.message.reply_text('Прогноз еще недоступен. Подождите немного.')
