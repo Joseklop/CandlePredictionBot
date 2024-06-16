@@ -1,9 +1,11 @@
-import threading
 import subprocess
+import threading
+
 from config import Config
 
 # Загрузка конфигурации
 config = Config()
+
 
 def run_telegram_bot():
     try:
@@ -14,6 +16,7 @@ def run_telegram_bot():
     except Exception as e:
         print(f"Ошибка при запуске tg_bot.py: {e}")
 
+
 def run_websocket():
     try:
         # Запуск websocketBybit.py как отдельного процесса
@@ -22,6 +25,7 @@ def run_websocket():
         print(f"Ошибка при выполнении websocketBybit.py: {e}")
     except Exception as e:
         print(f"Ошибка при запуске websocketBybit.py: {e}")
+
 
 if __name__ == "__main__":
     # Запуск Telegram бота в отдельном потоке

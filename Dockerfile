@@ -1,40 +1,46 @@
-# Use the official Python image as a base
-FROM python:3.11.5 as base
+# Используем официальный образ Python 3.11-slim
+FROM python:3.11-slim
 
-# Set environment variables to prevent Python from writing .pyc files to disk
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Install necessary system packages
+# Устанавливаем зависимости для компиляции и установки пакетов
 RUN apt-get update && apt-get install -y \
     build-essential \
-    gcc \
-    gfortran \
-    libatlas-base-dev\
-    libopenblas-dev \
-    liblapack-dev \
-    libhdf5-dev \
-    libfreetype6-dev \
-    pkg-config \
+    curl \
+    git \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    wget \
+    llvm \
+    libncurses5-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libffi-dev \
+    liblzma-dev \
+    python3-openssl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 - \
-    && ln -s $HOME/.local/bin/poetry /usr/local/bin/poetry
+# Устанавливаем Poetry
+RUN pip install poetry
 
-# Set working directory
+# Обновляем переменную окружения PATH для использования Poetry
+ENV PATH="/root/.local/bin:$PATH"
+
+# Создаем рабочую директорию
 WORKDIR /app
 
-# Copy the pyproject.toml and poetry.lock files
+# Копируем pyproject.toml и poetry.lock в контейнер
 COPY pyproject.toml poetry.lock /app/
 
-# Install dependencies and create virtual environment
-RUN poetry config virtualenvs.create true \
-    && poetry install --no-root
+# Устанавливаем зависимости проекта
+RUN poetry config virtualenvs.create false
+RUN poetry install
 
-# Copy the rest of the application code
+# Копируем остальные файлы проекта
 COPY . /app/
 
-# Command to run the application
+# Указываем команду для запуска бота
 CMD ["poetry", "run", "python", "tg_bot.py"]

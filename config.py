@@ -1,6 +1,7 @@
 import json
 import os
 
+
 class Config:
     def __init__(self, config_file="config.json"):
         # Получаем путь к текущей директории
@@ -9,7 +10,7 @@ class Config:
 
         # Загружаем конфигурацию из JSON-файла
         try:
-            with open(config_path, 'r') as file:
+            with open(config_path, "r") as file:
                 self._config = json.load(file)
         except FileNotFoundError:
             raise Exception(f"Файл конфигурации '{config_path}' не найден.")
@@ -18,7 +19,7 @@ class Config:
 
         # Определяем базовый путь
         self.base_dir = base_dir
-        self.model_path = os.path.join(base_dir, 'model/gru_model_v2.h5')
+        self.model_path = os.path.join(base_dir, "model/gru_model_v2.h5")
         self.websocket_path = os.path.join(base_dir, "websocketBybit.py")
         self.tg_bot_path = os.path.join(base_dir, "tg_bot.py")
 

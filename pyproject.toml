@@ -7,16 +7,19 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "3.11.5"
-numpy = ">=1.24.0"
-scikit-learn = "1.3.0"
-tensorflow = "2.14.0"
-keras = "2.14.0"
-python-telegram-bot = "21.1.1"
-requests = "2.31.0"
-websocket-client = "1.7.0"
-tensorflow-io-gcs-filesystem = "0.31.0"
-tradingview_ta = "3.3.0"
+numpy = "*"
+scikit-learn = "*"
+tensorflow = "*"
+keras = "*"
+python-telegram-bot = "*"
+requests = "*"
+websocket-client = "*"
+tensorflow-io-gcs-filesystem = "*"
+tradingview_ta = "*"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start-bot = "tg_bot:app.run_polling"    
