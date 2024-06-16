@@ -1,41 +1,45 @@
 import subprocess
 import threading
-
+import logging
 from config import Config
 
-# Загрузка конфигурации
+# Load configuration
 config = Config()
+
+# Set up logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+
+
+def run_script(script_path, script_name):
+    try:
+        # Run the script as a separate process
+        subprocess.run(["python", script_path], check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error running {script_name}: {e}")
+    except Exception as e:
+        logging.error(f"Error starting {script_name}: {e}")
 
 
 def run_telegram_bot():
-    try:
-        # Запуск tg_bot.py как отдельного процесса
-        subprocess.run(["python3", config.tg_bot_path], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Ошибка при выполнении tg_bot.py: {e}")
-    except Exception as e:
-        print(f"Ошибка при запуске tg_bot.py: {e}")
+    run_script(config.tg_bot_path, "tg_bot.py")
 
 
 def run_websocket():
-    try:
-        # Запуск websocketBybit.py как отдельного процесса
-        subprocess.run(["python3", config.websocket_path], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Ошибка при выполнении websocketBybit.py: {e}")
-    except Exception as e:
-        print(f"Ошибка при запуске websocketBybit.py: {e}")
+    run_script(config.websocket_path, "websocketBybit.py")
 
 
 if __name__ == "__main__":
-    # Запуск Telegram бота в отдельном потоке
-    telegram_thread = threading.Thread(target=run_telegram_bot)
-    telegram_thread.start()
+    # Start the Telegram bot and WebSocket connection in separate threads
+    threads = []
+    threads.append(threading.Thread(target=run_telegram_bot, name="TelegramBotThread"))
+    threads.append(threading.Thread(target=run_websocket, name="WebSocketThread"))
 
-    # Запуск WebSocket соединения в отдельном потоке
-    websocket_thread = threading.Thread(target=run_websocket)
-    websocket_thread.start()
+    # Start the threads
+    for thread in threads:
+        thread.start()
 
-    # Ожидание завершения работы обоих потоков
-    telegram_thread.join()
-    websocket_thread.join()
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
