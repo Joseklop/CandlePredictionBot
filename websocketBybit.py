@@ -17,7 +17,7 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 # Set up logging
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+    format="%(asctime)s - %(name)s - %(levellevelname)s - %(message)s", level=logging.INFO
 )
 
 # Load configuration
@@ -58,7 +58,7 @@ class SocketConn(websocket.WebSocketApp):
 
         _thread.start_new_thread(run, ())
 
-    def message(self, msg):
+    def message(self, ws, msg):
         global last_candle_data, successful_predictions, unsuccessful_predictions
 
         try:
@@ -77,6 +77,8 @@ class SocketConn(websocket.WebSocketApp):
 
                     if len(last_closing_prices) > window_size:
                         last_closing_prices.pop(0)
+
+                    logging.info(f"Accumulated closing prices: {len(last_closing_prices)}/{window_size}")
 
                     if len(last_closing_prices) == window_size:
                         self.predict_next_candle()
@@ -137,7 +139,7 @@ class SocketConn(websocket.WebSocketApp):
                     unsuccessful_predictions += 1
                 logging.info(
                     f"Updated statistics - Successful: {successful_predictions}, Unsuccessful: {unsuccessful_predictions}"
-                    )
+                )
         except Exception as e:
             logging.error(f"Error in prediction: {e}")
 

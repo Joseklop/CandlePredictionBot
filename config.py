@@ -28,7 +28,7 @@ class Config:
 
         # Define base path and other paths
         self.base_dir = base_dir
-        self.model_path = os.path.join(base_dir, "model", "gru_model_v2.h5")
+        self.model_path = os.path.join(base_dir, "model", "gru_model_v3.keras")
         self.websocket_path = os.path.join(base_dir, "websocketBybit.py")
         self.tg_bot_path = os.path.join(base_dir, "tg_bot.py")
 
