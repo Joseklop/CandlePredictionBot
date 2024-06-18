@@ -1,16 +1,15 @@
+import logging
 import subprocess
 import threading
-import logging
+
 from config import Config
+from logging_config import setup_logging
 
 # Load configuration
 config = Config()
 
 # Set up logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-
+setup_logging("main.log")
 
 def run_script(script_path, script_name):
     try:
@@ -21,14 +20,11 @@ def run_script(script_path, script_name):
     except Exception as e:
         logging.error(f"Error starting {script_name}: {e}")
 
-
 def run_telegram_bot():
     run_script(config.tg_bot_path, "tg_bot.py")
 
-
 def run_websocket():
     run_script(config.websocket_path, "websocketBybit.py")
-
 
 if __name__ == "__main__":
     # Start the Telegram bot and WebSocket connection in separate threads

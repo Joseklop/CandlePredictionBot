@@ -3,3 +3,4 @@ config.json
 requirements.txt
 poetry.lock
 .mypy_cache
+/logs/*

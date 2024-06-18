@@ -6,19 +6,19 @@ import threading
 from datetime import datetime
 
 import numpy as np
+from pmdarima import auto_arima
+from pmdarima.arima import ARIMA
 import websocket
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import load_model
 
 from config import Config
+from logging_config import setup_logging
 
 # Set environment variable to turn off oneDNN optimizations
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
-# Set up logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levellevelname)s - %(message)s", level=logging.INFO
-)
+setup_logging("app.log")
 
 # Load configuration
 config = Config()
@@ -29,10 +29,16 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 
 # Initialize variables
 last_closing_prices = []
-last_predicted_price = None
+last_predicted_price_gru = None
+last_predicted_price_arima = None
 last_candle_data = None
-successful_predictions = 0
-unsuccessful_predictions = 0
+
+successful_predictions_gru = 71
+unsuccessful_predictions_gru = 236
+
+successful_predictions_arima = 20
+unsuccessful_predictions_arima = 112
+
 window_size = config.get("window_size", 14)
 
 logging.info("Initialization complete.")
@@ -59,7 +65,7 @@ class SocketConn(websocket.WebSocketApp):
         _thread.start_new_thread(run, ())
 
     def message(self, ws, msg):
-        global last_candle_data, successful_predictions, unsuccessful_predictions
+        global last_candle_data, successful_predictions_gru, unsuccessful_predictions_gru
 
         try:
             data = json.loads(msg)
@@ -109,45 +115,83 @@ class SocketConn(websocket.WebSocketApp):
         logging.info("WebSocket connection closed.")
 
     def predict_next_candle(self):
-        global last_predicted_price, successful_predictions, unsuccessful_predictions
+        global last_predicted_price_gru, last_predicted_price_arima
+        global successful_predictions_gru, unsuccessful_predictions_gru
+        global successful_predictions_arima, unsuccessful_predictions_arima
         try:
+            # GRU Prediction
             last_prices = np.array(last_closing_prices).reshape(-1, 1)
             scaled_data = scaler.fit_transform(last_prices)
             X_test = np.reshape(scaled_data, (1, scaled_data.shape[0], 1))
-            predicted_price = model.predict(X_test)
-            last_predicted_price = scaler.inverse_transform(predicted_price)[0][0]
-            logging.info(f"Прогнозируемая цена: {last_predicted_price}")
+            predicted_price_gru = model.predict(X_test)
+            last_predicted_price_gru = scaler.inverse_transform(predicted_price_gru)[0][0]
+            logging.info(f"Прогнозируемая цена (GRU): {last_predicted_price_gru}")
 
-            if last_predicted_price and last_closing_prices:
+            # ARIMA Prediction
+            history = list(last_closing_prices)
+            model_arima = auto_arima(history, start_p=1, start_q=1, max_p=3, max_q=3, d=1,
+                                     trace=False, error_action='ignore', suppress_warnings=True)
+            forecast_arima = model_arima.predict(n_periods=1)[0]
+            last_predicted_price_arima = forecast_arima
+            logging.info(f"Прогнозируемая цена (ARIMA): {last_predicted_price_arima}")
+
+
+            if last_predicted_price_gru and last_closing_prices:
                 current_price = last_closing_prices[-1]
                 previous_price = last_closing_prices[-2]
-                difference = last_predicted_price - current_price
-                difference_percentage = (difference / current_price) * 100
-                prediction = "вырастет 📈" if difference > 0 else "упадет 📉"
+
+                # GRU Evaluation
+                difference_gru = last_predicted_price_gru - current_price
+                difference_percentage_gru = (difference_gru / current_price) * 100
+                prediction_gru = "вырастет 📈" if difference_gru > 0 else "упадет 📉"
                 logging.info(
-                    f"Текущая цена: {current_price}, Прогнозируемая цена: {last_predicted_price}"
+                    f"GRU - Текущая цена: {current_price}, Прогнозируемая цена: {last_predicted_price_gru}"
                 )
                 logging.info(
-                    f"Разница: {difference}, Разница в процентах: {difference_percentage:.2f}%, Прогноз: Цена {prediction}"
+                    f"GRU - Разница: {difference_gru}, Разница в процентах: {difference_percentage_gru:.2f}%, Прогноз: Цена {prediction_gru}"
                 )
 
-                if (difference > 0 and current_price > previous_price) or (
-                    difference < 0 and current_price < previous_price
-                ):
-                    successful_predictions += 1
-                else:
-                    unsuccessful_predictions += 1
+                # ARIMA Evaluation
+                difference_arima = last_predicted_price_arima - current_price
+                difference_percentage_arima = (difference_arima / current_price) * 100
+                prediction_arima = "вырастет 📈" if difference_arima > 0 else "упадет 📉"
                 logging.info(
-                    f"Updated statistics - Successful: {successful_predictions}, Unsuccessful: {unsuccessful_predictions}"
+                    f"ARIMA - Текущая цена: {current_price}, Прогнозируемая цена: {last_predicted_price_arima}"
+                )
+                logging.info(
+                    f"ARIMA - Разница: {difference_arima}, Разница в процентах: {difference_percentage_arima:.2f}%, Прогноз: Цена {prediction_arima}"
+                )
+
+                # Update statistics for GRU
+                if (difference_gru > 0 and current_price > previous_price) or (
+                    difference_gru < 0 and current_price < previous_price
+                ):
+                    successful_predictions_gru += 1
+                else:
+                    unsuccessful_predictions_gru += 1
+
+                # Update statistics for ARIMA
+                if (difference_arima > 0 and current_price > previous_price) or (
+                    difference_arima < 0 and current_price < previous_price
+                ):
+                    successful_predictions_arima += 1
+                else:
+                    unsuccessful_predictions_arima += 1
+
+                logging.info(
+                    f"Updated statistics - GRU Successful: {successful_predictions_gru}, Unsuccessful: {unsuccessful_predictions_gru}"
+                )
+                logging.info(
+                    f"Updated statistics - ARIMA Successful: {successful_predictions_arima}, Unsuccessful: {unsuccessful_predictions_arima}"
                 )
         except Exception as e:
             logging.error(f"Error in prediction: {e}")
 
 
 def get_last_predicted_price():
-    logging.info(f"Last predicted price: {last_predicted_price}")
-    return last_predicted_price
-
+    logging.info(f"Last predicted price (GRU): {last_predicted_price_gru}")
+    logging.info(f"Last predicted price (ARIMA): {last_predicted_price_arima}")
+    return last_predicted_price_gru, last_predicted_price_arima
 
 def get_last_candle_data():
     logging.info(f"Last candle data: {last_candle_data}")
@@ -155,8 +199,15 @@ def get_last_candle_data():
 
 
 def get_prediction_statistics():
-    logging.info(f"Prediction statistics - Successful: {successful_predictions}, Unsuccessful: {unsuccessful_predictions}")
-    return successful_predictions, unsuccessful_predictions
+    logging.info(
+            f"""Prediction statistics GRU:
+                    Successful: {successful_predictions_gru}, 
+                    Unsuccessful: {unsuccessful_predictions_gru}
+                    Prediction statistics ARIMA:
+                    Successful: {successful_predictions_arima}, 
+                    Unsuccessful: {unsuccessful_predictions_arima}"""
+            )
+    return successful_predictions_gru, unsuccessful_predictions_gru, successful_predictions_arima, unsuccessful_predictions_arima
 
 
 symbol = config.get("symbol", "BTCUSDT")
